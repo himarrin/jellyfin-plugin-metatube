@@ -57,6 +57,15 @@ _NOTE: This project will only support stable versions._
 
 Full documentation and examples can be found at [Wiki](https://metatube-community.github.io/wiki/).
 
+## Using the Deploy Build workflow on your branch
+
+To add the automated release workflow to your own branch:
+
+1. Ensure `.github/workflows/deploy.yml` is present in your branch (merge or cherry-pick the workflow commit if needed).
+2. Push the branch to GitHub so Actions can see the workflow file.
+3. Create a tag that starts with `v` (for example, `v1.2.3`) on your branch **or** trigger **Deploy Build** manually from the Actions tab and supply the `version` input.
+4. The workflow builds Jellyfin and Emby plugin ZIPs, regenerates `manifest.json` on the `dist` branch, and publishes a release with the generated artifacts.
+
 ## Community
 
 Welcome and feel free to ask any questions at [Discussions](https://github.com/metatube-community/jellyfin-plugin-metatube/discussions).
