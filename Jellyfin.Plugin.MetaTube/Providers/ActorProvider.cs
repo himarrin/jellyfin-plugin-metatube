@@ -25,11 +25,11 @@ public class ActorProvider : BaseProvider, IRemoteMetadataProvider<Person, Perso
     public async Task<MetadataResult<Person>> GetMetadata(PersonLookupInfo info,
         CancellationToken cancellationToken)
     {
-        var pid = info.GetPid(Plugin.ProviderId);
+        var pid = info.GetPid(Name);
         if (string.IsNullOrWhiteSpace(pid.Id) || string.IsNullOrWhiteSpace(pid.Provider))
         {
             var firstResult = (await GetSearchResults(info, cancellationToken)).FirstOrDefault();
-            if (firstResult != null) pid = firstResult.GetPid(Plugin.ProviderId);
+            if (firstResult != null) pid = firstResult.GetPid(Name);
         }
 
         Logger.Info("Get actor info: {0}", pid.ToString());
@@ -55,13 +55,24 @@ public class ActorProvider : BaseProvider, IRemoteMetadataProvider<Person, Perso
         if (!string.IsNullOrWhiteSpace(m.Nationality))
             result.Item.ProductionLocations = new[] { m.Nationality };
 
+        // Add tags from metatube API.
+        if (m.Tags != null && m.Tags.Length > 0)
+        {
+            foreach (var tag in m.Tags)
+            {
+                if (!string.IsNullOrWhiteSpace(tag))
+                    result.Item.AddTag(tag);
+            }
+            Logger.Info("Added {0} tags for actor {1}", m.Tags.Length, m.Name);
+        }
+
         return result;
     }
 
     public async Task<IEnumerable<RemoteSearchResult>> GetSearchResults(
         PersonLookupInfo info, CancellationToken cancellationToken)
     {
-        var pid = info.GetPid(Plugin.ProviderId);
+        var pid = info.GetPid(Name);
 
         var searchResults = new List<ActorSearchResult>();
         if (string.IsNullOrWhiteSpace(pid.Id))
@@ -114,10 +125,23 @@ public class ActorProvider : BaseProvider, IRemoteMetadataProvider<Person, Perso
             ("カップサイズ", a.CupSize),
             ("身長", a.Height > 0 ? $"{a.Height}cm" : string.Empty),
             ("血液型", !string.IsNullOrWhiteSpace(a.BloodType) ? $"{a.BloodType}型" : string.Empty),
-            ("デビュー", a.DebutDate.GetValidDateTime()?.ToString("yyyy年M月d日"))
+            ("デビュー", a.DebutDate.GetValidDateTime()?.ToString("yyyy年M月d日")),
+            ("Twitter", !string.IsNullOrWhiteSpace(a.Twitter) ? $"@{a.Twitter}" : string.Empty),
+            ("Instagram", !string.IsNullOrWhiteSpace(a.Instagram) ? $"@{a.Instagram}" : string.Empty)
         };
 
-        return string.Join("\n<br>\n",
+        var overview = string.Join("\n<br>\n",
             info.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Item2)).Select(kvp => $"{kvp.Item1}: {kvp.Item2}"));
+
+        // Add tags summary if available (show first few tags as preview)
+        if (a.Tags != null && a.Tags.Length > 0)
+        {
+            var tagPreview = string.Join(", ", a.Tags.Take(5));
+            if (a.Tags.Length > 5)
+                tagPreview += $" ... (+{a.Tags.Length - 5} more)";
+            overview += $"\n<br>\nタグ: {tagPreview}";
+        }
+
+        return overview;
     }
 }

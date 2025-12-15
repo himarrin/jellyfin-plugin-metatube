@@ -36,4 +36,13 @@ public class ActorInfo : ActorSearchResult
 
     [JsonPropertyName("summary")]
     public string Summary { get; set; }
+
+    [JsonPropertyName("twitter")]
+    public string Twitter { get; set; }
+
+    [JsonPropertyName("instagram")]
+    public string Instagram { get; set; }
+
+    [JsonPropertyName("tags")]
+    public string[] Tags { get; set; }
 }
