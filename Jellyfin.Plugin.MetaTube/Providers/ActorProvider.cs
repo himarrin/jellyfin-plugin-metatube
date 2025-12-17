@@ -126,20 +126,17 @@ public class ActorProvider : BaseProvider, IRemoteMetadataProvider<Person, Perso
             ("身長", a.Height > 0 ? $"{a.Height}cm" : string.Empty),
             ("血液型", !string.IsNullOrWhiteSpace(a.BloodType) ? $"{a.BloodType}型" : string.Empty),
             ("デビュー", a.DebutDate.GetValidDateTime()?.ToString("yyyy年M月d日")),
-            ("Twitter", !string.IsNullOrWhiteSpace(a.Twitter) ? $"@{a.Twitter}" : string.Empty),
-            ("Instagram", !string.IsNullOrWhiteSpace(a.Instagram) ? $"@{a.Instagram}" : string.Empty)
+            ("Twitter", !string.IsNullOrWhiteSpace(a.Twitter) ? $"<a href=\"https://twitter.com/{a.Twitter}\" target=\"_blank\">@{a.Twitter}</a>" : string.Empty),
+            ("Instagram", !string.IsNullOrWhiteSpace(a.Instagram) ? $"<a href=\"https://instagram.com/{a.Instagram}\" target=\"_blank\">@{a.Instagram}</a>" : string.Empty)
         };
 
         var overview = string.Join("\n<br>\n",
             info.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Item2)).Select(kvp => $"{kvp.Item1}: {kvp.Item2}"));
 
-        // Add tags summary if available (show first few tags as preview)
+        // Add all tags if available
         if (a.Tags != null && a.Tags.Length > 0)
         {
-            var tagPreview = string.Join(", ", a.Tags.Take(5));
-            if (a.Tags.Length > 5)
-                tagPreview += $" ... (+{a.Tags.Length - 5} more)";
-            overview += $"\n<br>\nタグ: {tagPreview}";
+            overview += $"\n<br>\nタグ: {string.Join(", ", a.Tags)}";
         }
 
         return overview;
