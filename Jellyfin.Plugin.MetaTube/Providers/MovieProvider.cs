@@ -315,7 +315,7 @@ public class MovieProvider : BaseProvider, IRemoteMetadataProvider<Movie, MovieI
         }
         catch (Exception e)
         {
-            Logger.Error("Get actor image error: {0} ({1})", actor.Name, e.Message);
+            Logger.Warn("Get actor image error: {0} ({1})", actor.Name, e.Message);
         }
     }
 
