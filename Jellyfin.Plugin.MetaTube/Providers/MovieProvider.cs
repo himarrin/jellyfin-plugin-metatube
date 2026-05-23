@@ -34,6 +34,11 @@ public class MovieProvider : BaseProvider, IRemoteMetadataProvider<Movie, MovieI
 
     private static readonly string[] AvBaseSupportedProviderNames = { "DUGA", "FANZA", "Getchu", "MGS" };
 
+    // Matches western filenames like: X-Art-(2015-11-08)-Dressed to Thrill,Caprice
+    private static readonly Regex WesternFilenameRegex = new(
+        @"^(?<studio>[A-Za-z][A-Za-z0-9\- ]+?)\s*-\s*\((?<date>\d{4}-\d{2}-\d{2})\)\s*-\s*(?<title>[^,]+)",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
 #if __EMBY__
     public MetadataFeatures[] Features => new[]
         { MetadataFeatures.Collections, MetadataFeatures.Adult, MetadataFeatures.RequiredSetup };
@@ -205,9 +210,32 @@ public class MovieProvider : BaseProvider, IRemoteMetadataProvider<Movie, MovieI
         var searchResults = new List<MovieSearchResult>();
         if (string.IsNullOrWhiteSpace(pid.Id) || string.IsNullOrWhiteSpace(pid.Provider))
         {
+            // Try to detect western filename format from the full file path.
+            // e.g. "X-Art-(2015-11-08)-Dressed to Thrill,Caprice.mkv"
+            // Emby strips the parenthesized date portion, leaving info.Name = "X-Art",
+            // so we must parse the original filename from info.Path instead.
+            var searchQuery = info.Name;
+            var searchProvider = pid.Provider;
+
+            if (!string.IsNullOrWhiteSpace(info.Path))
+            {
+                var filename = System.IO.Path.GetFileNameWithoutExtension(info.Path);
+                var match = WesternFilenameRegex.Match(filename);
+                if (match.Success)
+                {
+                    // Use the full original filename as the search query so the backend
+                    // can parse date + title; force provider to the matching studio name.
+                    searchQuery = filename;
+                    if (string.IsNullOrWhiteSpace(searchProvider))
+                        searchProvider = match.Groups["studio"].Value.Replace("-", "").Replace(" ", "");
+                    Logger.Info("Detected western filename, searching with full name: {0} (provider={1})",
+                        searchQuery, searchProvider);
+                }
+            }
+
             // Search movie by name.
-            Logger.Info("Search for movie: {0}", info.Name);
-            searchResults.AddRange(await ApiClient.SearchMovieAsync(info.Name, pid.Provider, cancellationToken));
+            Logger.Info("Search for movie: {0}", searchQuery);
+            searchResults.AddRange(await ApiClient.SearchMovieAsync(searchQuery, searchProvider, cancellationToken));
         }
         else
         {
