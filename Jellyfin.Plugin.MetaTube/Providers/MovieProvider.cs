@@ -210,27 +210,36 @@ public class MovieProvider : BaseProvider, IRemoteMetadataProvider<Movie, MovieI
         var searchResults = new List<MovieSearchResult>();
         if (string.IsNullOrWhiteSpace(pid.Id) || string.IsNullOrWhiteSpace(pid.Provider))
         {
-            // Try to detect western filename format from the full file path.
-            // e.g. "X-Art-(2015-11-08)-Dressed to Thrill,Caprice.mkv"
-            // Emby strips the parenthesized date portion, leaving info.Name = "X-Art",
-            // so we must parse the original filename from info.Path instead.
+            // Try to detect western filename format from both info.Name and the
+            // full file path. e.g. "X-Art-(2015-11-08)-Dressed to Thrill,Caprice.mkv"
+            // During automatic refresh Emby strips the parenthesized date portion,
+            // leaving info.Name = "X-Art", so we must parse info.Path. During a
+            // manual "Identify" search the user-entered info.Name carries the full
+            // filename instead, so we must check both.
             var searchQuery = info.Name;
             var searchProvider = pid.Provider;
 
-            if (!string.IsNullOrWhiteSpace(info.Path))
+            foreach (var candidate in new[]
+                     {
+                         info.Name,
+                         string.IsNullOrWhiteSpace(info.Path)
+                             ? null
+                             : System.IO.Path.GetFileNameWithoutExtension(info.Path)
+                     })
             {
-                var filename = System.IO.Path.GetFileNameWithoutExtension(info.Path);
-                var match = WesternFilenameRegex.Match(filename);
-                if (match.Success)
-                {
-                    // Use the full original filename as the search query so the backend
-                    // can parse date + title; force provider to the matching studio name.
-                    searchQuery = filename;
-                    if (string.IsNullOrWhiteSpace(searchProvider))
-                        searchProvider = match.Groups["studio"].Value.Replace("-", "").Replace(" ", "");
-                    Logger.Info("Detected western filename, searching with full name: {0} (provider={1})",
-                        searchQuery, searchProvider);
-                }
+                if (string.IsNullOrWhiteSpace(candidate))
+                    continue;
+                var match = WesternFilenameRegex.Match(candidate);
+                if (!match.Success)
+                    continue;
+                // Use the full original filename as the search query so the backend
+                // can parse date + title; force provider to the matching studio name.
+                searchQuery = candidate;
+                if (string.IsNullOrWhiteSpace(searchProvider))
+                    searchProvider = match.Groups["studio"].Value.Replace("-", "").Replace(" ", "");
+                Logger.Info("Detected western filename, searching with full name: {0} (provider={1})",
+                    searchQuery, searchProvider);
+                break;
             }
 
             // Search movie by name.
