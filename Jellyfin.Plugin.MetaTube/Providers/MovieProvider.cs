@@ -207,6 +207,11 @@ public class MovieProvider : BaseProvider, IRemoteMetadataProvider<Movie, MovieI
     {
         var pid = info.GetPid(Plugin.ProviderId);
 
+        // Diagnostic: dump raw inputs so we can see what Emby actually passes
+        // (Name is often cleaned to the studio, Path may be empty for manual identify).
+        Logger.Info("GetSearchResults inputs: Name={0}, Path={1}, Year={2}",
+            info.Name ?? "<null>", info.Path ?? "<null>", info.Year?.ToString() ?? "<null>");
+
         var searchResults = new List<MovieSearchResult>();
         if (string.IsNullOrWhiteSpace(pid.Id) || string.IsNullOrWhiteSpace(pid.Provider))
         {
