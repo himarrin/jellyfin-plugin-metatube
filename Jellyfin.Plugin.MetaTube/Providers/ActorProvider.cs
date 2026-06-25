@@ -14,6 +14,12 @@ namespace Jellyfin.Plugin.MetaTube.Providers;
 
 public class ActorProvider : BaseProvider, IRemoteMetadataProvider<Person, PersonLookupInfo>, IHasOrder
 {
+    // Emby orders person remote-search providers by IHasOrder.Order ascending. The built-in
+    // TheMovieDb person provider has no IHasOrder (defaults to 0) while BaseProvider.Order is 1,
+    // so TMDb ranks ahead of MetaTube and its match drops MetaTube results during aggregation.
+    // Rank MetaTube first; it still falls through to TMDb when MetaTube has no match.
+    public override int Order => -1;
+
 #if __EMBY__
     public ActorProvider(ILogManager logManager) : base(logManager.CreateLogger<ActorProvider>())
 #else
