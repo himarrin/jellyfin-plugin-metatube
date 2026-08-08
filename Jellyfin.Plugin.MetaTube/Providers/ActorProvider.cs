@@ -136,13 +136,39 @@ public class ActorProvider : BaseProvider, IRemoteMetadataProvider<Person, Perso
             ("Instagram", !string.IsNullOrWhiteSpace(a.Instagram) ? $"<a href=\"https://instagram.com/{a.Instagram}\" target=\"_blank\">@{a.Instagram}</a>" : string.Empty)
         };
 
-        var overview = string.Join("\n<br>\n",
+        var overview = string.Join("\n",
             info.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Item2)).Select(kvp => $"{kvp.Item1}: {kvp.Item2}"));
 
         // Add all tags if available
         if (a.Tags != null && a.Tags.Length > 0)
         {
-            overview += $"\n<br>\nタグ: {string.Join(", ", a.Tags)}";
+            var regularTags = new List<string>();
+            var attributeTags = new List<string>();
+
+            foreach (var tag in a.Tags)
+            {
+                if (string.IsNullOrWhiteSpace(tag)) continue;
+
+                if (tag.StartsWith("Debut：") || tag.StartsWith("身高：") || 
+                    tag.StartsWith("出生日期：") || tag.StartsWith("年龄：") || 
+                    tag.StartsWith("三围：") || tag.StartsWith("罩杯："))
+                {
+                    attributeTags.Add(tag);
+                }
+                else
+                {
+                    regularTags.Add(tag);
+                }
+            }
+
+            if (regularTags.Count > 0)
+            {
+                overview += $"\nタグ: {string.Join(", ", regularTags)}";
+            }
+            if (attributeTags.Count > 0)
+            {
+                overview += $"\n{string.Join("\n", attributeTags)}";
+            }
         }
 
         return overview;
