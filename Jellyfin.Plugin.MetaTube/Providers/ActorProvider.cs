@@ -142,32 +142,16 @@ public class ActorProvider : BaseProvider, IRemoteMetadataProvider<Person, Perso
         // Add all tags if available
         if (a.Tags != null && a.Tags.Length > 0)
         {
-            var regularTags = new List<string>();
-            var attributeTags = new List<string>();
-
-            foreach (var tag in a.Tags)
-            {
-                if (string.IsNullOrWhiteSpace(tag)) continue;
-
-                if (tag.StartsWith("Debut：") || tag.StartsWith("身高：") || 
-                    tag.StartsWith("出生日期：") || tag.StartsWith("年龄：") || 
-                    tag.StartsWith("三围：") || tag.StartsWith("罩杯："))
-                {
-                    attributeTags.Add(tag);
-                }
-                else
-                {
-                    regularTags.Add(tag);
-                }
-            }
+            var regularTags = a.Tags
+                .Where(tag => !string.IsNullOrWhiteSpace(tag))
+                .Where(tag => !(tag.StartsWith("Debut：") || tag.StartsWith("身高：") || 
+                                tag.StartsWith("出生日期：") || tag.StartsWith("年龄：") || 
+                                tag.StartsWith("三围：") || tag.StartsWith("罩杯：")))
+                .ToList();
 
             if (regularTags.Count > 0)
             {
                 overview += $"\nタグ: {string.Join(", ", regularTags)}";
-            }
-            if (attributeTags.Count > 0)
-            {
-                overview += $"\n{string.Join("\n", attributeTags)}";
             }
         }
 
